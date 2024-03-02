@@ -78,13 +78,16 @@ export default function AccountsComponent() {
 
     return (
         <Card className="w-full max-w-lg">
-        <CardHeader>
-            <CardTitle className="text-xl">投票用アカウントの更新</CardTitle>
+        <CardHeader className="pb-0">
+            <CardTitle>投票用アカウントの更新</CardTitle>
         </CardHeader>
         <CardContent className="flex gap-4 items-start py-4">
             <div className="flex flex-col items-start space-y-4">
+            <div>
             <p className="text-sm text-gray-500">1. 既存のユーザー一覧をダウンロード</p>
             <Button className="px-4 py-2" onClick={handleClick}>ユーザー一覧をダウンロード</Button>
+            </div>
+            <div>
             <p className="text-sm text-gray-500">2.新規会員の行を追加してアップロード</p>
             <input
                 accept=".xlsx"
@@ -93,6 +96,7 @@ export default function AccountsComponent() {
                 type="file"
                 onChange={handleUpload}
             />
+            </div>
             </div>
         </CardContent>
         </Card>
