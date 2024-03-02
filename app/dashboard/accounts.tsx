@@ -9,13 +9,15 @@ import { firebaseConfig } from "@/lib/firebase";
 import { saveSortedDataToExcel } from "@/lib/xlsx";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
 
+
 import type { User } from "@/lib/types";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export default function Home() {
+export default function AccountsComponent() {
+    
   const [users, setUsers] = useState<User[]>([]);
   
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function Home() {
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) return null;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -74,25 +76,25 @@ export default function Home() {
     saveSortedDataToExcel(userList, 'sortedData.xlsx');
   };
 
-  return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle className="text-xl">Manage Users</CardTitle>
-        <CardDescription>1. 既存のユーザー一覧をダウンロード 2.新規会員を追加したxlsxファイルをアップロード.xlsx</CardDescription>
-      </CardHeader>
-      <CardContent className="flex gap-4 items-start py-4">
-        <div className="flex flex-col items-center space-y-4">
-          <Button className="px-4 py-2" onClick={handleClick}>ユーザー一覧をダウンロード</Button>
-          <p className="text-sm text-gray-500">Update Users (Please add rows to the downloaded user list.)</p>
-          <input
-            accept=".xlsx"
-            className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
-            id="upload"
-            type="file"
-            onChange={handleUpload}
-          />
-        </div>
-      </CardContent>
-    </Card>
-  );
+    return (
+        <Card className="w-full max-w-lg">
+        <CardHeader>
+            <CardTitle className="text-xl">投票用アカウントの更新</CardTitle>
+        </CardHeader>
+        <CardContent className="flex gap-4 items-start py-4">
+            <div className="flex flex-col items-start space-y-4">
+            <p className="text-sm text-gray-500">1. 既存のユーザー一覧をダウンロード</p>
+            <Button className="px-4 py-2" onClick={handleClick}>ユーザー一覧をダウンロード</Button>
+            <p className="text-sm text-gray-500">2.新規会員の行を追加してアップロード</p>
+            <input
+                accept=".xlsx"
+                className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
+                id="upload"
+                type="file"
+                onChange={handleUpload}
+            />
+            </div>
+        </CardContent>
+        </Card>
+    );
 }
