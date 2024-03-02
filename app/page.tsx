@@ -1,4 +1,4 @@
-import AccountsComponent from "@/app/accounts";
+import AccountsComponent from "@/lib/accounts";
 import ReservationComponent from "@/app/reservation";
 
 export default function Page() {
