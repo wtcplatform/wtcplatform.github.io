@@ -85,7 +85,7 @@ export default function AccountsComponent() {
             <div className="flex flex-col items-start space-y-4">
             <div>
             <p className="text-sm text-gray-500">1. 既存のユーザー一覧をダウンロード</p>
-            <Button className="px-4 py-2" onClick={handleClick}>ユーザー一覧をダウンロード</Button>
+            <Button variant="secondary" className="px-4 py-2" onClick={handleClick}>ユーザー一覧をダウンロード</Button>
             </div>
             <div>
             <p className="text-sm text-gray-500">2.新規会員の行を追加してアップロード</p>

@@ -7,7 +7,10 @@ import { firebaseConfig } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
-import { getDatabase } from "firebase/database";
+import { processVoteDataFromExcel } from "@/lib/xlsx";
+import * as XLSX from 'xlsx';
+
+import type { User } from "@/lib/types";
 
 
 // Initialize Firebase
@@ -22,6 +25,7 @@ export default function ReservationComponent() {
     // The problem is how to specify the votedest and votes object to use:
     //  -> Simply delete votedest and votebyother every time
 
+    // This is a sample collected vote destinations
     const sampleVote = {
         "2024-04-05": {
             "1番": {
@@ -43,7 +47,7 @@ export default function ReservationComponent() {
         } 
     } satisfies VoteByOther;
 
-    // push the data to firestore
+    // push the data to Firestore
     async function pushDataToFirestore({/*dataObject: VoteByOther*/}) {
         // const dateStr = new Date().toISOString();
         const collectionName = 'voteByOther'; // Replace with your collection name
@@ -73,12 +77,16 @@ export default function ReservationComponent() {
         return null;
       }
     }
-
-    // async function reserve() {
-    //     voteByOthers = getDatabase
-    // }
     
-    
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return null;
+      try {
+        const data = await processVoteDataFromExcel(file);
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
     return (
       <Card className="w-full max-w-lg">
@@ -87,9 +95,19 @@ export default function ReservationComponent() {
           <CardDescription>Use the buttons below to interact with the reservation system.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4">
-            <Button onClick={pushDataToFirestore}>Push data(sample)</Button>
-            <Button onClick={getDatabase}>Get voteByOther(sample)</Button>
+          <div className="flex flex-col gap-4 py-4">
+            <Button variant="secondary" onClick={pushDataToFirestore}>Push data(sample)</Button>
+            <Button variant="secondary" onClick={getDatabase}>Get voteByOther(sample)</Button>
+            <div>
+            <p className="text-sm text-gray-500">投票数のxlsxファイルをアップロードしてください。</p>
+            <input
+                accept=".xlsx"
+                className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
+                id="upload"
+                type="file"
+                onChange={handleUpload}
+            />
+            </div>
           </div>
         </CardContent>
       </Card>
