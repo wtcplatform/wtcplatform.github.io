@@ -14,7 +14,7 @@ export async function saveSortedDataToExcel(data: User[], fileName: string): Pro
   const sortedData = data.sort((a, b) => a.serial - b.serial);
 
   // Define the headers
-  worksheet.addRow(['Serial', 'Name', 'ID', 'Password']);
+  worksheet.addRow(['serial', 'name', 'id', 'password']);
 
   // Add data to the worksheet
   sortedData.forEach((item: User) => {
@@ -23,10 +23,10 @@ export async function saveSortedDataToExcel(data: User[], fileName: string): Pro
 
   // Set column widths for better readability
   worksheet.columns = [
-    { header: 'Serial', key: 'serial', width: 10 },
-    { header: 'Name', key: 'name', width: 20 },
-    { header: 'ID', key: 'id', width: 20 },
-    { header: 'Password', key: 'password', width: 15 },
+    { header: 'serial', key: 'serial', width: 10 },
+    { header: 'name', key: 'name', width: 20 },
+    { header: 'id', key: 'id', width: 20 },
+    { header: 'password', key: 'password', width: 15 },
   ];
 
   // Convert workbook to Blob (for download)
@@ -57,16 +57,13 @@ export async function processVoteDataFromExcel(file: File) {
     throw new Error('No worksheet found in the file');
   }
   
-  const docName = (new Date()).toString;
-
   worksheet.eachRow((row, rowNumber) => {
     // Skip the header row and any row that doesn't start with a date
     if (!row.getCell(1).text.match(/.*\d{2}-\d{2}/)) return;
 
+    console.log(rowNumber);
     // Extract the date from the first cell
     const date = `2024-${row.getCell(1).text}`;
-    console.log(`Date: ${date}`);
-    console.log(`rowNumber: ${rowNumber}`);
     if (!voteData[date]) {
       voteData[date] = {};
     }
@@ -92,14 +89,12 @@ export async function processVoteDataFromExcel(file: File) {
           voteData[date][itemLabel] = {};
         }
         voteData[date][itemLabel][timeSlot] = parseInt(voteCount);
-        console.log(`${date} ${itemLabel} ${timeSlot} = ${voteData[date][itemLabel][timeSlot]}`)
       }
     }
   });
 
   // Here you would normally push to Firestore
   // This is how the output object looks like
-  console.log(voteData);
   return voteData;
 }
 

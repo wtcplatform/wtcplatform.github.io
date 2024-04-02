@@ -10,6 +10,8 @@ import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/com
 import { processVoteDataFromExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
 
+import { convertDataToVotedest, getUserList, getVoteByOther} from "@/lib/utils";
+
 import type { User } from "@/lib/types";
 
 
@@ -62,31 +64,30 @@ export default function ReservationComponent() {
         }
       }
 
-    // get the data from Firestore
-    async function getDatabase() {
-      const userCollection = collection(db, 'voteByOther');
-      const newestVoteByOther = query(userCollection, orderBy('createdAt', 'desc'), limit(1));
-      const voteSnapshot = await getDocs(newestVoteByOther);
 
-      if (!voteSnapshot.empty) {
-        const newestDocument = voteSnapshot.docs[0].data(); // Get the data of the newest document
-        console.log(newestDocument);
-        return newestDocument;
-      } else {
-        console.log("No documents found");
-        return null;
-      }
-    }
     
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return null;
       try {
+        // Process the data from the uploaded file
         const data = await processVoteDataFromExcel(file);
+        console.log(data);
+
       } catch (error) {
         console.log(error);
       }
     };
+
+    const reserve = async () => {
+      // get userList:
+
+      // get voteByOther:
+      // get the data from Firestore
+      const voteByOther = await getVoteByOther();
+      const userList = await getUserList();
+      // convert the data to votedest:
+      const votedest = convertDataToVotedest(userList, voteByOther);
 
     return (
       <Card className="w-full max-w-lg">
@@ -97,7 +98,7 @@ export default function ReservationComponent() {
         <CardContent>
           <div className="flex flex-col gap-4 py-4">
             <Button variant="secondary" onClick={pushDataToFirestore}>Push data(sample)</Button>
-            <Button variant="secondary" onClick={getDatabase}>Get voteByOther(sample)</Button>
+            <Button variant="secondary" onClick={getVoteByOther}>Get voteByOther(sample)</Button>
             <div>
             <p className="text-sm text-gray-500">投票数のxlsxファイルをアップロードしてください。</p>
             <input
@@ -107,9 +108,11 @@ export default function ReservationComponent() {
                 type="file"
                 onChange={handleUpload}
             />
+            <Button variant="secondary" onClick={reserve}>予約を開始する</Button>
             </div>
-          </div>
+            </div>
         </CardContent>
       </Card>
     )
+}
 }
