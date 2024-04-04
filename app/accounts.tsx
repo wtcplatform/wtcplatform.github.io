@@ -9,7 +9,7 @@ import { firebaseConfig } from "@/lib/firebase";
 import { saveSortedDataToExcel } from "@/lib/xlsx";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
 
-import { getUserList } from "@/lib/utils";
+import { getUserList, getVoteByOther } from "@/lib/utils";
 import type { User } from "@/lib/types";
 
 // Initialize Firebase
@@ -18,6 +18,23 @@ const db = getFirestore(app);
 
 export default function AccountsComponent() {
 
+  const [numberOfVotes, setNumberOfVotes] = useState(0); // State for storing the number of votes
+
+  const getNumberOfVotes = async () => {
+    const userList = await getUserList();
+    let sum = 0;
+    userList.forEach((user) => {
+      if (!!user && user.penaltyCount && user.penaltyCount <= 4) {
+        sum += 1
+      };
+    });
+    setNumberOfVotes(sum);
+  };
+
+  useEffect(() => {
+    getNumberOfVotes();
+  }, []);
+  
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return null;
@@ -32,25 +49,12 @@ export default function AccountsComponent() {
       const userJson = userList.reduce((a, v) => ({...a, [v.serial.toString().padStart(4, "0")]: v}), {})
 
       await setDoc(doc(db, "account_list", (new Date()).toISOString()), {"createdAt": new Date(), userJson});
-
-      // for (const user of json) {
-      //   console.log(user);
-      //   if (user.serial) {
-      //     user.id = user.id.toString();
-      //     try {
-      //       await setDoc(doc(db, "accounts", user.serial.toString().padStart(8, "0")), user);
-      //       console.log('User added successfully:', user.id);
-      //     } catch (error) {
-      //       console.error("Error adding user:", user.id, error);
-      //     }
-      //   } else {
-      //     console.warn('User skipped (Missing ID):', user);
-      //   }
-      // }
       alert('Data upload completed!');
     };
     reader.readAsBinaryString(file);
   };
+
+  
 
 
 
@@ -63,6 +67,7 @@ export default function AccountsComponent() {
       console.error("Error fetching or processing document: ", error);
     }
   };
+
   
 
     return (
@@ -85,6 +90,7 @@ export default function AccountsComponent() {
                 type="file"
                 onChange={handleUpload}
             />
+            <p className="text-sm text-gray-500">利用可能票数:{numberOfVotes}</p>
             </div>
             </div>
         </CardContent>

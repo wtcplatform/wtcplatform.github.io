@@ -3,6 +3,7 @@ export type User = {
     serial: number;
     name: string;
     password: string;
+    penaltyCount?: number;
   }
 
 export type UserWithRights = User & {rights: number;}

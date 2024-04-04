@@ -28,7 +28,7 @@ const decreaseFirstEligibleUserRightsAndReturnUser = (userList: UserWithRights[]
   };
 }
 
-export const getUserList = async () => {
+export const getUserList = async (): Promise<User[]> => {
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -44,7 +44,7 @@ export const getUserList = async () => {
 }
 
 // get the data from Firestore
-export const getVoteByOther = async () => {
+export const getVoteByOther = async (): Promise<VoteByOther> => {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const userCollection = collection(db, 'voteByOther');
@@ -52,11 +52,23 @@ export const getVoteByOther = async () => {
   const voteSnapshot = await getDocs(newestVoteByOther);
 
   if (!voteSnapshot.empty) {
-    const newestDocument = voteSnapshot.docs[0].data(); // Get the data of the newest document
+    const newestDocument = voteSnapshot.docs[0].data().data; // Get the data of the newest document
     console.log(newestDocument);
     return newestDocument;
   } else {
     throw new Error("No voteByOther documents found");
+  }
+}
+
+
+export const pushDataToFirestore = async ({collectionName = "voteDest", data = {}, docId = (new Date()).toISOString()}) => {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  try {
+    await setDoc(doc(db, collectionName, docId), {"createdAt": new Date(), ...data});
+    console.log('Data pushed to Firestore successfully');
+  } catch (error) {
+    console.error('Error writing document: ', error);
   }
 }
 
@@ -79,11 +91,23 @@ export function convertDataToVotedest(userList: User[], data: VoteByOther) {
           if (!foundUser) {
             throw new Error('User not found');
           }
-          let voteDest: voteDest = {date: date, destination: court, time: time, id: foundUser.id, password: foundUser.password, done: false};
+          let voteDest: voteDest = {date: date, destination: court, time: time, id: foundUser.id.toString(), password: foundUser.password.toString(), done: false};
           voteDestList.push(voteDest);
         }
       }
     }
   }
   return voteDestList;
+}
+
+export const calculateNumberOfVotes = (data: VoteByOther) => {
+  let count = 0;
+  for (const date in data) {
+    for (const court in data[date]) {
+      for (const time in data[date][court]) {
+        count += data[date][court][time];
+      }
+    }
+  }
+  return count;
 }

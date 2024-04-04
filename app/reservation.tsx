@@ -10,7 +10,7 @@ import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/com
 import { processVoteDataFromExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
 
-import { convertDataToVotedest, getUserList, getVoteByOther} from "@/lib/utils";
+import { convertDataToVotedest, getUserList, getVoteByOther, calculateNumberOfVotes, pushDataToFirestore} from "@/lib/utils";
 
 import type { User } from "@/lib/types";
 
@@ -36,7 +36,7 @@ export default function ReservationComponent() {
                 "12:30": 3,
                 "14:30": 4,
                 "16:30": 5,
-                "18:30": 6.
+                "18:30": 6,
             },
             "2番": {
                 "08:30": 21,
@@ -44,27 +44,12 @@ export default function ReservationComponent() {
                 "12:30": 23,
                 "14:30": 24,
                 "16:30": 25,
-                "18:30": 26.
+                "18:30": 26,
             }
         } 
     } satisfies VoteByOther;
 
     // push the data to Firestore
-    async function pushDataToFirestore({/*dataObject: VoteByOther*/}) {
-        // const dateStr = new Date().toISOString();
-        const collectionName = 'voteByOther'; // Replace with your collection name
-        const docId = `${new Date()}`; // Replace with your document ID or generate one
-
-        // Push the data to Firestore
-        try {
-          await setDoc(doc(db, collectionName, docId), {"createdAt": new Date(), ...sampleVote});
-          console.log('Data pushed to Firestore successfully');
-        } catch (error) {
-          console.error('Error writing document: ', error);
-        }
-      }
-
-
     
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -72,22 +57,25 @@ export default function ReservationComponent() {
       try {
         // Process the data from the uploaded file
         const data = await processVoteDataFromExcel(file);
-        console.log(data);
-
+        console.log(calculateNumberOfVotes(data));
+        // todo: if number of votes exceeds the limit, show a warning
       } catch (error) {
         console.log(error);
       }
     };
 
     const reserve = async () => {
-      // get userList:
 
-      // get voteByOther:
       // get the data from Firestore
       const voteByOther = await getVoteByOther();
       const userList = await getUserList();
-      // convert the data to votedest:
-      const votedest = convertDataToVotedest(userList, voteByOther);
+      // convert the data to votedest
+      const voteDest = convertDataToVotedest(userList, voteByOther);
+      console.log(voteDest.length);
+      // console.log(voteDest);
+      const userJson = userList.reduce((a, v) => ({...a, [v.serial.toString().padStart(6, "0")]: v}), {});
+      await pushDataToFirestore({collectionName: "voteDest", data: userJson});
+    }
 
     return (
       <Card className="w-full max-w-lg">
@@ -97,7 +85,6 @@ export default function ReservationComponent() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 py-4">
-            <Button variant="secondary" onClick={pushDataToFirestore}>Push data(sample)</Button>
             <Button variant="secondary" onClick={getVoteByOther}>Get voteByOther(sample)</Button>
             <div>
             <p className="text-sm text-gray-500">投票数のxlsxファイルをアップロードしてください。</p>
@@ -114,5 +101,4 @@ export default function ReservationComponent() {
         </CardContent>
       </Card>
     )
-}
 }
