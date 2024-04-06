@@ -98,6 +98,48 @@ export async function processVoteDataFromExcel(file: File) {
   return voteData;
 }
 
+export const writeVoteDataToExcel = async (voteData: voteByOther) => {
+  const times = ["06:30", "08:30", "10:30", "12:30", "14:30", "16:30", "18:30"];
+  const courts = ["1番", "2番", "3番", "4番", "5番", "6番", "7番", "8番", "9番", "10番", "11番", "12番"]; 
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Votes');
+
+  // Iterate through each date in voteData
+  Object.keys(voteData).sort().forEach((date) => {
+    worksheet.addRow([date.slice(-5), ...times]);
+    const items = voteData[date];
+    courts.forEach((court) => {
+      const courtData = items[court];
+      const timeRow = times.map((time) => {
+        return (time in courtData) ? courtData[time] : "休";
+      });
+      
+      worksheet.addRow([court, ...timeRow]);
+    });
+
+    // Adding empty rows for spacing
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+  });
+
+  // Generate a Blob from the workbook
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+
+  // Create a link and trigger the download
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.download = 'voteData.xlsx'; // Specify the download file name
+  document.body.appendChild(link); // Required for Firefox
+  link.click();
+  document.body.removeChild(link); // Clean up
+  URL.revokeObjectURL(url); // Free up memory
+};
+
+
+
 // Usage:
 // readVoteDestination('/path/to/your/file.xlsx').then(data => {
 //   // Push to Firestore or use data as needed

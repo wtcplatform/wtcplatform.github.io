@@ -22,6 +22,7 @@ export type voteDest = {
     date: string, 
     destination: string, 
     time: string,
+    serial: string,
     id: string, 
     password: string, 
     done: false

@@ -4,7 +4,6 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, setDoc, doc, query, limit, orderBy } from 'firebase/firestore/lite';
 import * as XLSX from 'xlsx';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { firebaseConfig } from "@/lib/firebase";
 import { saveSortedDataToExcel } from "@/lib/xlsx";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
@@ -21,14 +20,8 @@ export default function AccountsComponent() {
   const [numberOfVotes, setNumberOfVotes] = useState(0); // State for storing the number of votes
 
   const getNumberOfVotes = async () => {
-    const userList = await getUserList();
-    let sum = 0;
-    userList.forEach((user) => {
-      if (!!user && user.penaltyCount && user.penaltyCount <= 4) {
-        sum += 1
-      };
-    });
-    setNumberOfVotes(sum);
+  const userList = await getUserList({onlyAvailable: true});
+    setNumberOfVotes(4*userList.length);
   };
 
   useEffect(() => {
@@ -54,13 +47,9 @@ export default function AccountsComponent() {
     reader.readAsBinaryString(file);
   };
 
-  
-
-
-
   const handleClick = async () => {
     try {
-      const userList = await getUserList();
+      const userList = await getUserList({});
       const timestamp = (new Date()).toISOString().replace(/[:.]/g, '-');
       saveSortedDataToExcel(userList, `アカウント一覧_${timestamp}.xlsx`);
     } catch (error) {

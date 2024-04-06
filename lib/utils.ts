@@ -28,7 +28,7 @@ const decreaseFirstEligibleUserRightsAndReturnUser = (userList: UserWithRights[]
   };
 }
 
-export const getUserList = async (): Promise<User[]> => {
+export const getUserList = async ({onlyAvailable=false}): Promise<User[]> => {
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -40,7 +40,14 @@ export const getUserList = async (): Promise<User[]> => {
     throw Error("No user documents found");
   }
   const latestDocData = snapshot.docs[0].data();
-  return Object.values(latestDocData.userJson) as User[];
+  const userList = Object.values(latestDocData.userJson) as User[]
+  if (onlyAvailable) {
+    const availableUsers = userList.filter((user) => {
+      ("penaltyCount" in user) && ((user.penaltyCount ?? 0) >= 0) && ((user.penaltyCount ?? 0) <= 4)
+    });
+    return availableUsers;
+  }
+  return userList;
 }
 
 // get the data from Firestore
@@ -65,7 +72,7 @@ export const pushDataToFirestore = async ({collectionName = "voteDest", data = {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   try {
-    await setDoc(doc(db, collectionName, docId), {"createdAt": new Date(), ...data});
+    await setDoc(doc(db, collectionName, docId), {"createdAt": new Date(), "data": data});
     console.log('Data pushed to Firestore successfully');
   } catch (error) {
     console.error('Error writing document: ', error);
@@ -91,7 +98,7 @@ export function convertDataToVotedest(userList: User[], data: VoteByOther) {
           if (!foundUser) {
             throw new Error('User not found');
           }
-          let voteDest: voteDest = {date: date, destination: court, time: time, id: foundUser.id.toString(), password: foundUser.password.toString(), done: false};
+          let voteDest: voteDest = {date: date, destination: court, time: time, serial: foundUser.serial.toString(), id: foundUser.id.toString(), password: foundUser.password.toString(), done: false};
           voteDestList.push(voteDest);
         }
       }

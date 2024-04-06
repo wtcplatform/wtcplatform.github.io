@@ -7,7 +7,7 @@ import { firebaseConfig } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
-import { processVoteDataFromExcel } from "@/lib/xlsx";
+import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
 
 import { convertDataToVotedest, getUserList, getVoteByOther, calculateNumberOfVotes, pushDataToFirestore} from "@/lib/utils";
@@ -28,26 +28,6 @@ export default function ReservationComponent() {
     //  -> Simply delete votedest and votebyother every time
 
     // This is a sample collected vote destinations
-    const sampleVote = {
-        "2024-04-05": {
-            "1番": {
-                "08:30": 1,
-                "10:30": 2,
-                "12:30": 3,
-                "14:30": 4,
-                "16:30": 5,
-                "18:30": 6,
-            },
-            "2番": {
-                "08:30": 21,
-                "10:30": 22,
-                "12:30": 23,
-                "14:30": 24,
-                "16:30": 25,
-                "18:30": 26,
-            }
-        } 
-    } satisfies VoteByOther;
 
     // push the data to Firestore
     
@@ -63,18 +43,22 @@ export default function ReservationComponent() {
         console.log(error);
       }
     };
+    const downloadVoteByOther = async () => {
+      const voteByOther = await getVoteByOther();
+      return writeVoteDataToExcel(voteByOther);
+    }
 
     const reserve = async () => {
 
       // get the data from Firestore
       const voteByOther = await getVoteByOther();
-      const userList = await getUserList();
+      const userList = await getUserList({onlyAvailable: true});
+      console.log(userList.length);
       // convert the data to votedest
-      const voteDest = convertDataToVotedest(userList, voteByOther);
-      console.log(voteDest.length);
+      const voteDestList = convertDataToVotedest(userList, voteByOther);
       // console.log(voteDest);
-      const userJson = userList.reduce((a, v) => ({...a, [v.serial.toString().padStart(6, "0")]: v}), {});
-      await pushDataToFirestore({collectionName: "voteDest", data: userJson});
+      const voteDestJson = voteDestList.reduce((a, v) => ({...a, [Object.keys(a).length.toString().padStart(6, "0")]: v}), {});
+      await pushDataToFirestore({collectionName: "voteDest", data: voteDestJson});
     }
 
     return (
@@ -85,7 +69,7 @@ export default function ReservationComponent() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 py-4">
-            <Button variant="secondary" onClick={getVoteByOther}>Get voteByOther(sample)</Button>
+            <Button variant="secondary" onClick={downloadVoteByOther}>たたき台を取得</Button>
             <div>
             <p className="text-sm text-gray-500">投票数のxlsxファイルをアップロードしてください。</p>
             <input
