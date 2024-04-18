@@ -10,23 +10,31 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-const decreaseFirstEligibleUserRightsAndReturnUser = (userList: UserWithRights[]) => {
-  let foundUser: (any) = null; // 条件を満たすユーザーを格納する変数
 
+const decreaseFirstEligibleUserRightsAndReturnUser = (userList: UserWithRights[]) => {
+  // 最大のrightsを持つユーザーを探す
+  let maxRightsUser = userList.reduce((acc, user) => user.rights > (acc.rights || 0) ? user : acc, {rights: 0});
+
+  if (maxRightsUser.rights === 0) {
+    throw new Error("#votes exceeds the number of available users.")
+  }
+
+  // 更新されたユーザーリストを生成し、最大のrightsを持つユーザーのrightsを減らす
   const updatedUsers = userList.map(user => {
-      // まだ条件を満たすユーザーを見つけておらず、かつ、userがrightsプロパティを持ち、その値が1以上である場合
-      if (!foundUser && user.rights && user.rights >= 1) {
-          foundUser = {...user, rights: user.rights - 1}; // 条件を満たすユーザーをコピーし、rightsを1減らす
-          return foundUser; // 更新したユーザーオブジェクトを返す
-      }
-      return user; // 条件を満たさない場合は元のユーザーオブジェクトをそのまま返す
+    if (user === maxRightsUser) { // 条件を満たすユーザーが見つかった場合
+      const updatedUser = {...user, rights: user.rights - 1}; // rightsを1減らす
+      maxRightsUser = updatedUser; // 更新後のユーザーを最大のrightsを持つユーザーとして格納
+      return updatedUser;
+    }
+    return user; // 条件を満たさない場合は元のユーザーオブジェクトをそのまま返す
   });
 
   return {
-      updatedUsers,
-      foundUser // 条件を満たすユーザー、見つからなかった場合はnull
+    updatedUsers,
+    foundUser: maxRightsUser.rights >= 0 ? maxRightsUser : null // 条件を満たすユーザー、見つからなかった場合はnull
   };
 }
+
 
 export const getUserList = async ({onlyAvailable=false}): Promise<User[]> => {
   // Initialize Firebase
@@ -43,13 +51,26 @@ export const getUserList = async ({onlyAvailable=false}): Promise<User[]> => {
   const userList = Object.values(latestDocData.userJson) as User[]
   if (onlyAvailable) {
     const availableUsers = userList.filter((user) => {
-      ("penaltyCount" in user) && ((user.penaltyCount ?? 0) >= 0) && ((user.penaltyCount ?? 0) <= 4)
+      return (("penaltyCount" in user) && ((user.penaltyCount || 0) >= 0) && ((user.penaltyCount || 0) <= 3))
     });
     return availableUsers;
   }
   return userList;
 }
 
+export const getProgress = async (): Promise<{"total": number, "done": number}> => {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const userCollection = collection(db, 'voteDest');
+  const newestVoteByOther = query(userCollection, orderBy('createdAt', 'desc'), limit(1));
+  const voteSnapshot = await getDocs(newestVoteByOther);
+  if (!voteSnapshot.empty) {
+    const voteDest = voteSnapshot.docs[0].data().data; // Get the data of the newest document
+    return {"total": Object.keys(voteDest).length, "done": Object.values(voteDest).filter((vote: any) => vote.done).length};
+  } else {
+    throw new Error("No voteByOther documents found");
+  }
+}
 // get the data from Firestore
 export const getVoteByOther = async (): Promise<VoteByOther> => {
   const app = initializeApp(firebaseConfig);
@@ -73,7 +94,7 @@ export const pushDataToFirestore = async ({collectionName = "voteDest", data = {
   const db = getFirestore(app);
   try {
     await setDoc(doc(db, collectionName, docId), {"createdAt": new Date(), "data": data});
-    console.log('Data pushed to Firestore successfully');
+    alert("データの送信に成功しました！")
   } catch (error) {
     console.error('Error writing document: ', error);
   }
@@ -83,8 +104,9 @@ export function convertDataToVotedest(userList: User[], data: VoteByOther) {
   // Take an Object of #votes and a list of accounts, returns destinations ready for voting.
   // for test
   const voteDestList: voteDest[] = [];
-  let updatedUsers: UserWithRights[] = userList.map(user => ({...user, rights: 4}));
 
+  const userListTimesfour = [...userList, ...userList, ...userList, ...userList];
+  let idx = 0;
   for (const date in data) {
     // data[date]の各コートをループ
     for (const court in data[date]) {
@@ -93,19 +115,19 @@ export function convertDataToVotedest(userList: User[], data: VoteByOther) {
         const count = data[date][court][time];
         // 指定された回数分、時間帯をoutputArrayに追加
         for (let i = 0; i < count; i++) {
-          let {updatedUsers: newUpdatedUsers, foundUser} = decreaseFirstEligibleUserRightsAndReturnUser(updatedUsers);
-          updatedUsers = newUpdatedUsers;
-          if (!foundUser) {
-            throw new Error('User not found');
-          }
-          let voteDest: voteDest = {date: date, destination: court, time: time, serial: foundUser.serial.toString(), id: foundUser.id.toString(), password: foundUser.password.toString(), done: false};
+
+          let user = userListTimesfour[idx];
+          let voteDest: voteDest = {date: date, destination: court, time: time, serial: user.serial.toString(), id: user.id.toString(), password: user.password.toString(), done: false};
           voteDestList.push(voteDest);
+          console.log(voteDestList.length);
+          idx++;
         }
       }
     }
   }
   return voteDestList;
 }
+
 
 export const calculateNumberOfVotes = (data: VoteByOther) => {
   let count = 0;

@@ -6,11 +6,12 @@ import { getFirestore, collection, getDocs, setDoc, doc, query, limit, orderBy }
 import { firebaseConfig } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
 import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
 
-import { convertDataToVotedest, getUserList, getVoteByOther, calculateNumberOfVotes, pushDataToFirestore} from "@/lib/utils";
+import { convertDataToVotedest, getUserList, getVoteByOther, calculateNumberOfVotes, pushDataToFirestore, getProgress} from "@/lib/utils";
 
 import type { User } from "@/lib/types";
 
@@ -36,9 +37,15 @@ export default function ReservationComponent() {
       if (!file) return null;
       try {
         // Process the data from the uploaded file
-        const data = await processVoteDataFromExcel(file);
-        console.log(calculateNumberOfVotes(data));
-        // todo: if number of votes exceeds the limit, show a warning
+        const voteByOther = await processVoteDataFromExcel(file);
+        const userList = await getUserList({onlyAvailable: true});
+        // convert the data to votedest
+        const voteDestList = convertDataToVotedest(userList, voteByOther);
+        // console.log(voteDest);
+        const voteDestJson = voteDestList.reduce((a, v) => ({...a, [Object.keys(a).length.toString().padStart(6, "0")]: v}), {});
+        await pushDataToFirestore({collectionName: "voteDest", data: voteDestJson});
+        
+         // todo: if number of votes exceeds the limit, show a warning
       } catch (error) {
         console.log(error);
       }
@@ -62,10 +69,11 @@ export default function ReservationComponent() {
     }
 
     return (
+      <>
       <Card className="w-full max-w-lg">
         <CardHeader className="pb-0">
-          <CardTitle>Reservation</CardTitle>
-          <CardDescription>Use the buttons below to interact with the reservation system.</CardDescription>
+          <CardTitle>予約</CardTitle>
+          <CardDescription>予約するために、下のボタンを操作してください</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 py-4">
@@ -79,10 +87,26 @@ export default function ReservationComponent() {
                 type="file"
                 onChange={handleUpload}
             />
-            <Button variant="secondary" onClick={reserve}>予約を開始する</Button>
+            <div>
+            <div className="py-4">
+            {(async () => {
+              const {total, done} = await getProgress();
+              return (
+              <div className="py-4">
+                <Button variant="secondary" onClick={reserve} disabled={!!done}>予約を開始する</Button>
+                {!!done && (<p className = "text-sm text-gray-500">予約進行中 {done}/{total} </p>)}
+                <Progress value={done/total*100} />
+                <p className="text-sm text-gray-500">推定残り時間: {`${Math.floor((total-done)*15 / 3600)}時間${Math.floor(((total-done)*10 % 3600) / 60)}分`}
+                </p>
+              </div>
+              )
+            })()}
+            </div>
+            </div>
             </div>
             </div>
         </CardContent>
       </Card>
+      </>
     )
 }

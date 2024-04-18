@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, setDoc, doc, query, limit, orderBy } from 'firebase/firestore/lite';
 import * as XLSX from 'xlsx';
@@ -16,17 +16,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export default function AccountsComponent() {
-
-  const [numberOfVotes, setNumberOfVotes] = useState(0); // State for storing the number of votes
-
-  const getNumberOfVotes = async () => {
-  const userList = await getUserList({onlyAvailable: true});
-    setNumberOfVotes(4*userList.length);
-  };
-
-  useEffect(() => {
-    getNumberOfVotes();
-  }, []);
   
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,6 +38,7 @@ export default function AccountsComponent() {
 
   const handleClick = async () => {
     try {
+      console.log("handleClick");
       const userList = await getUserList({});
       const timestamp = (new Date()).toISOString().replace(/[:.]/g, '-');
       saveSortedDataToExcel(userList, `アカウント一覧_${timestamp}.xlsx`);
@@ -57,12 +47,19 @@ export default function AccountsComponent() {
     }
   };
 
-  
-
     return (
+        <div>
         <Card className="w-full max-w-lg">
         <CardHeader className="pb-0">
             <CardTitle>投票用アカウントの更新</CardTitle>
+            <CardDescription>
+              このセクションは、アカウントの名義一覧を編集するときのみ操作します。
+              編集の手順は、
+              1. "ユーザー一覧をダウンロード"ボタンから、現在のリストをエクセル形式でダウンロード
+              2. 手元で会員を追加/削除する
+              3. "新規会員の行を追加してアップロード"から、編集したxlsxファイルをアップロード
+              ※自動で読み取っているので、フォーマットを変更しないでください。
+            </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4 items-start py-4">
             <div className="flex flex-col items-start space-y-4">
@@ -79,10 +76,11 @@ export default function AccountsComponent() {
                 type="file"
                 onChange={handleUpload}
             />
-            <p className="text-sm text-gray-500">利用可能票数:{numberOfVotes}</p>
+            {/* <p className="text-sm text-gray-500">投票可能数:{numberOfVotes}</p> */}
             </div>
             </div>
         </CardContent>
         </Card>
+        </div>
     );
 }

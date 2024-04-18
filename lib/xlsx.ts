@@ -61,7 +61,7 @@ export async function processVoteDataFromExcel(file: File) {
     // Skip the header row and any row that doesn't start with a date
     if (!row.getCell(1).text.match(/.*\d{2}-\d{2}/)) return;
 
-    console.log(rowNumber);
+    // console.log(rowNumber);
     // Extract the date from the first cell
     const date = `2024-${row.getCell(1).text}`;
     if (!voteData[date]) {
@@ -98,7 +98,7 @@ export async function processVoteDataFromExcel(file: File) {
   return voteData;
 }
 
-export const writeVoteDataToExcel = async (voteData: voteByOther) => {
+export const writeVoteDataToExcel = async (voteData: VoteByOther) => {
   const times = ["06:30", "08:30", "10:30", "12:30", "14:30", "16:30", "18:30"];
   const courts = ["1番", "2番", "3番", "4番", "5番", "6番", "7番", "8番", "9番", "10番", "11番", "12番"]; 
   const workbook = new ExcelJS.Workbook();

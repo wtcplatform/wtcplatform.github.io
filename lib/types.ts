@@ -25,5 +25,5 @@ export type voteDest = {
     serial: string,
     id: string, 
     password: string, 
-    done: false
+    done: boolean
 }
