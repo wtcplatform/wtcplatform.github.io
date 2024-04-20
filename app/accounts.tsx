@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, setDoc, doc, query, limit } from 'firebase/firestore/lite';
 import * as XLSX from 'xlsx';
+import { getUserList } from '@/lib/utils'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { firebaseConfig } from "@/lib/firebase";
@@ -17,25 +18,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export default function AccountsComponent() {
-    
-  const [users, setUsers] = useState<User[]>([]);
-  
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const userCollection = collection(db, 'accounts');
-      const firstFiveUsersQuery = query(userCollection, limit(5));
-      const userSnapshot = await getDocs(firstFiveUsersQuery);
-      
-      const userList = userSnapshot.docs.map(doc => ({
-        id: doc.id, // Include the document ID
-        ...doc.data()
-      })) as User[];
-      console.log(userList);
-      setUsers(userList);
-    };
-
-    fetchUsers();
-  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,33 +29,23 @@ export default function AccountsComponent() {
       const workbook = XLSX.read(data, { type: 'binary' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const json: User[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+      const userList: User[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
+      const userJson = userList.reduce((a, v) => ({...a, [v.serial.toString().padStart(4, "0")]: v}), {})
 
-      for (const user of json) {
-        if (user.id) {
-          try {
-            await setDoc(doc(db, "accounts", user.id), user);
-            console.log('User added successfully:', user.id);
-          } catch (error) {
-            console.error("Error adding user:", user.id, error);
-          }
-        } else {
-          console.warn('User skipped (Missing ID):', user);
-        }
-      }
+      await setDoc(doc(db, "account_list", (new Date()).toISOString()), {"createdAt": new Date(), userJson});
       alert('Data upload completed!');
     };
     reader.readAsBinaryString(file);
   };
 
   const handleClick = async () => {
-    const userCollection = collection(db, 'accounts');
-    const userSnapshot = await getDocs(userCollection);
-
-    const userList = userSnapshot.docs.map(doc => ({
-      ...doc.data()
-    })) as User[];
-    saveSortedDataToExcel(userList, 'sortedData.xlsx');
+    try {
+      const userList = await getUserList({});
+      const timestamp = (new Date()).toISOString().replace(/[:.]/g, '-');
+      saveSortedDataToExcel(userList, `アカウント一覧_${timestamp}.xlsx`);
+    } catch (error) {
+      console.error("Error fetching or processing document: ", error);
+    }
   };
 
     return (
@@ -85,10 +57,10 @@ export default function AccountsComponent() {
             <div className="flex flex-col items-start space-y-4">
             <div>
             <p className="text-sm text-gray-500">1. 既存のユーザー一覧をダウンロード</p>
-            <Button variant="secondary" className="px-4 py-2" onClick={handleClick}>ユーザー一覧をダウンロード</Button>
+            <Button variant="secondary" className="px-4 py-2" onClick={handleClick}>ダウンロード</Button>
             </div>
             <div>
-            <p className="text-sm text-gray-500">2.新規会員の行を追加してアップロード</p>
+            <p className="text-sm text-gray-500">2. ダウンロードしたxlsxファイルの行を削除/追加してアップロード</p>
             <input
                 accept=".xlsx"
                 className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
@@ -96,6 +68,7 @@ export default function AccountsComponent() {
                 type="file"
                 onChange={handleUpload}
             />
+            <p className="text-sm text-gray-500">※この際、他の行と同じフォーマットで、行間を空けないようにしてください！</p>
             </div>
             </div>
         </CardContent>

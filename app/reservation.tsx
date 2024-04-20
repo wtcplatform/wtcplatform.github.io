@@ -6,9 +6,12 @@ import { getFirestore, collection, getDocs, setDoc, doc, query, limit, orderBy }
 import { firebaseConfig } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
-import { processVoteDataFromExcel } from "@/lib/xlsx";
+import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
+
+import { convertDataToVotedest, getUserList, getVoteByOther, calculateNumberOfVotes, pushDataToFirestore, getProgress} from "@/lib/utils";
 
 import type { User } from "@/lib/types";
 
@@ -16,7 +19,6 @@ import type { User } from "@/lib/types";
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 export default function ReservationComponent() {
     //1. Scrape votes from the website
     //2. Push the votes object to the firestore
@@ -26,80 +28,58 @@ export default function ReservationComponent() {
     //  -> Simply delete votedest and votebyother every time
 
     // This is a sample collected vote destinations
-    const sampleVote = {
-        "2024-04-05": {
-            "1番": {
-                "08:30": 1,
-                "10:30": 2,
-                "12:30": 3,
-                "14:30": 4,
-                "16:30": 5,
-                "18:30": 6.
-            },
-            "2番": {
-                "08:30": 21,
-                "10:30": 22,
-                "12:30": 23,
-                "14:30": 24,
-                "16:30": 25,
-                "18:30": 26.
-            }
-        } 
-    } satisfies VoteByOther;
 
-    // push the data to Firestore
-    async function pushDataToFirestore({/*dataObject: VoteByOther*/}) {
-        // const dateStr = new Date().toISOString();
-        const collectionName = 'voteByOther'; // Replace with your collection name
-        const docId = `${new Date()}`; // Replace with your document ID or generate one
+    const nextMonth = (new Date()).getMonth() + 1;
 
-        // Push the data to Firestore
-        try {
-          await setDoc(doc(db, collectionName, docId), {"createdAt": new Date(), ...sampleVote});
-          console.log('Data pushed to Firestore successfully');
-        } catch (error) {
-          console.error('Error writing document: ', error);
-        }
-      }
-
-    // get the data from Firestore
-    async function getDatabase() {
-      const userCollection = collection(db, 'voteByOther');
-      const newestVoteByOther = query(userCollection, orderBy('createdAt', 'desc'), limit(1));
-      const voteSnapshot = await getDocs(newestVoteByOther);
-
-      if (!voteSnapshot.empty) {
-        const newestDocument = voteSnapshot.docs[0].data(); // Get the data of the newest document
-        console.log(newestDocument);
-        return newestDocument;
-      } else {
-        console.log("No documents found");
-        return null;
-      }
-    }
-    
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return null;
       try {
-        const data = await processVoteDataFromExcel(file);
+        // Process the data from the uploaded file
+        const voteByOther = await processVoteDataFromExcel(file);
+        const userList = await getUserList({onlyAvailable: true});
+        // convert the data to votedest
+        const voteDestList = convertDataToVotedest(userList, voteByOther);
+        // console.log(voteDest);
+        const voteDestJson = voteDestList.reduce((a, v) => ({...a, [Object.keys(a).length.toString().padStart(6, "0")]: v}), {});
+        await pushDataToFirestore({collectionName: "voteDest", data: voteDestJson});
+        
+         // todo: if number of votes exceeds the limit, show a warning
       } catch (error) {
         console.log(error);
       }
     };
 
+    const downloadVoteByOther = async () => {
+      const voteByOther = await getVoteByOther();
+      return writeVoteDataToExcel(voteByOther);
+    }
+
+
+    const vote = async () => {
+      // 投票するapi
+    }
+
     return (
       <Card className="w-full max-w-lg">
         <CardHeader className="pb-0">
-          <CardTitle>Reservation</CardTitle>
-          <CardDescription>Use the buttons below to interact with the reservation system.</CardDescription>
+          <CardTitle>予約</CardTitle>
+          {/* <CardDescription>Use the buttons below to interact with the reservation system.</CardDescription> */}
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 py-4">
-            <Button variant="secondary" onClick={pushDataToFirestore}>Push data(sample)</Button>
-            <Button variant="secondary" onClick={getDatabase}>Get voteByOther(sample)</Button>
             <div>
-            <p className="text-sm text-gray-500">投票数のxlsxファイルをアップロードしてください。</p>
+            <p className="text-sm text-gray-500">1.下書きを更新</p>
+            <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>更新</Button>
+            <p className="text-sm text-gray-500">最終更新日:{}</p>
+            </div>
+            <div>
+            <p className="text-sm text-gray-500">2.投票数の下書きをダウンロード</p>
+            <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>ダウンロード</Button>
+            <p className="text-sm text-gray-500">※デフォルトで他の人からの票数の3倍</p>
+            </div>
+            <div>
+            <p className="text-sm text-gray-500">3.下書きを編集した投票先ファイルをアップロード</p>
             <input
                 accept=".xlsx"
                 className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
@@ -107,6 +87,15 @@ export default function ReservationComponent() {
                 type="file"
                 onChange={handleUpload}
             />
+            <p className="text-sm text-gray-500">最終更新日:{}</p>
+            <p className="text-sm text-gray-500">※合計で1000票は超えないようにお願いします！</p>
+
+            <div>
+            <p className="text-sm text-gray-500">4.投票の実行</p>
+            <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>投票</Button>
+            </div>
+
+
             </div>
           </div>
         </CardContent>

@@ -14,7 +14,7 @@ export async function saveSortedDataToExcel(data: User[], fileName: string): Pro
   const sortedData = data.sort((a, b) => a.serial - b.serial);
 
   // Define the headers
-  worksheet.addRow(['Serial', 'Name', 'ID', 'Password']);
+  worksheet.addRow(['serial', 'name', 'id', 'password']);
 
   // Add data to the worksheet
   sortedData.forEach((item: User) => {
@@ -23,10 +23,10 @@ export async function saveSortedDataToExcel(data: User[], fileName: string): Pro
 
   // Set column widths for better readability
   worksheet.columns = [
-    { header: 'Serial', key: 'serial', width: 10 },
-    { header: 'Name', key: 'name', width: 20 },
-    { header: 'ID', key: 'id', width: 20 },
-    { header: 'Password', key: 'password', width: 15 },
+    { header: 'serial', key: 'serial', width: 10 },
+    { header: 'name', key: 'name', width: 20 },
+    { header: 'id', key: 'id', width: 20 },
+    { header: 'password', key: 'password', width: 15 },
   ];
 
   // Convert workbook to Blob (for download)
@@ -57,16 +57,13 @@ export async function processVoteDataFromExcel(file: File) {
     throw new Error('No worksheet found in the file');
   }
   
-  const docName = (new Date()).toString;
-
   worksheet.eachRow((row, rowNumber) => {
     // Skip the header row and any row that doesn't start with a date
     if (!row.getCell(1).text.match(/.*\d{2}-\d{2}/)) return;
 
+    // console.log(rowNumber);
     // Extract the date from the first cell
     const date = `2024-${row.getCell(1).text}`;
-    console.log(`Date: ${date}`);
-    console.log(`rowNumber: ${rowNumber}`);
     if (!voteData[date]) {
       voteData[date] = {};
     }
@@ -92,18 +89,51 @@ export async function processVoteDataFromExcel(file: File) {
           voteData[date][itemLabel] = {};
         }
         voteData[date][itemLabel][timeSlot] = parseInt(voteCount);
-        console.log(`${date} ${itemLabel} ${timeSlot} = ${voteData[date][itemLabel][timeSlot]}`)
       }
     }
   });
 
   // Here you would normally push to Firestore
   // This is how the output object looks like
-  console.log(voteData);
   return voteData;
 }
 
-// Usage:
-// readVoteDestination('/path/to/your/file.xlsx').then(data => {
-//   // Push to Firestore or use data as needed
-// });
+export const writeVoteDataToExcel = async (voteData: VoteByOther) => {
+  const times = ["06:30", "08:30", "10:30", "12:30", "14:30", "16:30", "18:30"];
+  const courts = ["1番", "2番", "3番", "4番", "5番", "6番", "7番", "8番", "9番", "10番", "11番", "12番"]; 
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Votes');
+
+  // Iterate through each date in voteData
+  Object.keys(voteData).sort().forEach((date) => {
+    worksheet.addRow([date.slice(-5), ...times]);
+    const items = voteData[date];
+    courts.forEach((court) => {
+      const courtData = items[court];
+      const timeRow = times.map((time) => {
+        return (time in courtData) ? courtData[time] : "休";
+      });
+      
+      worksheet.addRow([court, ...timeRow]);
+    });
+
+    // Adding empty rows for spacing
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+  });
+
+  // Generate a Blob from the workbook
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+
+  // Create a link and trigger the download
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.download = 'voteData.xlsx'; // Specify the download file name
+  document.body.appendChild(link); // Required for Firefox
+  link.click();
+  document.body.removeChild(link); // Clean up
+  URL.revokeObjectURL(url); // Free up memory
+};
