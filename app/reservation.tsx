@@ -29,6 +29,8 @@ export default function ReservationComponent() {
 
     // This is a sample collected vote destinations
 
+    
+
     const nextMonth = (new Date()).getMonth() + 1;
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,6 +73,7 @@ export default function ReservationComponent() {
             <div>
             <p className="text-sm text-gray-500">1.下書きを更新</p>
             <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>更新</Button>
+            {()}
             <p className="text-sm text-gray-500">最終更新日:{}</p>
             </div>
             <div>
