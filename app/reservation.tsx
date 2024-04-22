@@ -7,9 +7,7 @@ import { firebaseConfig } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Progress } from "@/components/ui/progress";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
-import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
 
@@ -62,16 +60,6 @@ export default function ReservationComponent() {
         await pushDataToFirestore({collectionName: "voteDest", data: voteDestJson});
         
          // todo: if number of votes exceeds the limit, show a warning
-        // Process the data from the uploaded file
-        const voteByOther = await processVoteDataFromExcel(file);
-        const userList = await getUserList({onlyAvailable: true});
-        // convert the data to votedest
-        const voteDestList = convertDataToVotedest(userList, voteByOther);
-        // console.log(voteDest);
-        const voteDestJson = voteDestList.reduce((a, v) => ({...a, [Object.keys(a).length.toString().padStart(6, "0")]: v}), {});
-        await pushDataToFirestore({collectionName: "voteDest", data: voteDestJson});
-        
-         // todo: if number of votes exceeds the limit, show a warning
       } catch (error) {
         console.log(error);
       }
@@ -80,7 +68,6 @@ export default function ReservationComponent() {
       const {voteByOther} = await getVoteByOther();
       return writeVoteDataToExcel(voteByOther);
     }
-
 
     return (
       <>

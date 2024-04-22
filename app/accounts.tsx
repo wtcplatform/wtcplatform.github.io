@@ -1,14 +1,16 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, setDoc, doc, query, limit, orderBy } from 'firebase/firestore/lite';
+import { getFirestore, collection, getDocs, setDoc, doc, query, limit } from 'firebase/firestore/lite';
 import * as XLSX from 'xlsx';
+import { getUserList } from '@/lib/utils'
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { firebaseConfig } from "@/lib/firebase";
 import { saveSortedDataToExcel } from "@/lib/xlsx";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
 
-import { getUserList, getVoteByOther } from "@/lib/utils";
+
 import type { User } from "@/lib/types";
 
 // Initialize Firebase
@@ -16,6 +18,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export default function AccountsComponent() {
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return null;
@@ -46,18 +49,9 @@ export default function AccountsComponent() {
   };
 
     return (
-        <div>
         <Card className="w-full max-w-lg">
         <CardHeader className="pb-0">
             <CardTitle>投票用アカウントの更新</CardTitle>
-            <CardDescription>
-              このセクションは、アカウントの名義一覧を編集するときのみ操作します。
-              編集の手順は、
-              1. "ユーザー一覧をダウンロード"ボタンから、現在のリストをエクセル形式でダウンロード
-              2. 手元で会員を追加/削除する
-              3. "新規会員の行を追加してアップロード"から、編集したxlsxファイルをアップロード
-              ※自動で読み取っているので、フォーマットを変更しないでください。
-            </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4 items-start py-4">
             <div className="flex flex-col items-start space-y-4">
@@ -79,6 +73,5 @@ export default function AccountsComponent() {
             </div>
         </CardContent>
         </Card>
-        </div>
     );
 }
