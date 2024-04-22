@@ -7,19 +7,20 @@ import { firebaseConfig } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
+import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
 
-import { convertDataToVotedest, getUserList, getVoteByOther, calculateNumberOfVotes, pushDataToFirestore, getProgress} from "@/lib/utils";
-
+import { convertDataToVotedest, getUserList, getVoteByOther, getVoteDest, calculateNumberOfVotes, pushDataToFirestore, getProgress} from "@/lib/utils";
+import React, { useState, useEffect } from "react";
 import type { User } from "@/lib/types";
 
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 export default function ReservationComponent() {
     //1. Scrape votes from the website
     //2. Push the votes object to the firestore
@@ -30,12 +31,37 @@ export default function ReservationComponent() {
 
     // This is a sample collected vote destinations
 
-    // push the data to Firestore
-    
+    const [voteDestCreatedAt, setVoteDestCreatedAt] = useState<string>("");
+    const [voteByOtherCreatedAt, setvoteByOtherCreatedAt] = useState<string>("");
+
+
+    useEffect(()=> {
+      getVoteDest()
+        .then((response) => {
+        const {createdAt} = response;
+        setVoteDestCreatedAt(new Date(createdAt.seconds * 1000).toDateString())});
+      
+      getVoteByOther()
+        .then((response) => {
+        const {createdAt} = response;
+        setvoteByOtherCreatedAt(new Date(createdAt.seconds * 1000).toDateString())});
+    }, [])
+
+
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return null;
       try {
+        // Process the data from the uploaded file
+        const voteByOther = await processVoteDataFromExcel(file);
+        const userList = await getUserList({onlyAvailable: true});
+        // convert the data to votedest
+        const voteDestList = convertDataToVotedest(userList, voteByOther);
+        // console.log(voteDest);
+        const voteDestJson = voteDestList.reduce((a, v) => ({...a, [Object.keys(a).length.toString().padStart(6, "0")]: v}), {});
+        await pushDataToFirestore({collectionName: "voteDest", data: voteDestJson});
+        
+         // todo: if number of votes exceeds the limit, show a warning
         // Process the data from the uploaded file
         const voteByOther = await processVoteDataFromExcel(file);
         const userList = await getUserList({onlyAvailable: true});
@@ -51,35 +77,32 @@ export default function ReservationComponent() {
       }
     };
     const downloadVoteByOther = async () => {
-      const voteByOther = await getVoteByOther();
+      const {voteByOther} = await getVoteByOther();
       return writeVoteDataToExcel(voteByOther);
     }
 
-    const reserve = async () => {
-
-      // get the data from Firestore
-      const voteByOther = await getVoteByOther();
-      const userList = await getUserList({onlyAvailable: true});
-      console.log(userList.length);
-      // convert the data to votedest
-      const voteDestList = convertDataToVotedest(userList, voteByOther);
-      // console.log(voteDest);
-      const voteDestJson = voteDestList.reduce((a, v) => ({...a, [Object.keys(a).length.toString().padStart(6, "0")]: v}), {});
-      await pushDataToFirestore({collectionName: "voteDest", data: voteDestJson});
-    }
 
     return (
       <>
       <Card className="w-full max-w-lg">
         <CardHeader className="pb-0">
           <CardTitle>予約</CardTitle>
-          <CardDescription>予約するために、下のボタンを操作してください</CardDescription>
+          {/* <CardDescription>Use the buttons below to interact with the reservation system.</CardDescription> */}
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 py-4">
-            <Button variant="secondary" onClick={downloadVoteByOther}>たたき台を取得</Button>
             <div>
-            <p className="text-sm text-gray-500">投票数のxlsxファイルをアップロードしてください。</p>
+            <p className="text-sm text-gray-500">1.サイトから下書きを取得</p>
+            <Button variant="secondary" className="max-w-sm" onClick={() => {}}>取得</Button>
+            <p className="text-sm text-gray-500">最終取得日:{voteByOtherCreatedAt}</p>
+            </div>
+            <div>
+            <p className="text-sm text-gray-500">2.投票数の下書きをダウンロード</p>
+            <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>ダウンロード</Button>
+            <p className="text-sm text-gray-500">※デフォルトで元の票数の3倍</p>
+            </div>
+            <div>
+            <p className="text-sm text-gray-500">3.下書きを編集した投票先ファイルをアップロード</p>
             <input
                 accept=".xlsx"
                 className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
@@ -87,24 +110,14 @@ export default function ReservationComponent() {
                 type="file"
                 onChange={handleUpload}
             />
+            <p className="text-sm text-gray-500">※合計で1000票は超えないようにお願いします！</p>
+            </div>
             <div>
-            <div className="py-4">
-            {(async () => {
-              const {total, done} = await getProgress();
-              return (
-              <div className="py-4">
-                <Button variant="secondary" onClick={reserve} disabled={!!done}>予約を開始する</Button>
-                {!!done && (<p className = "text-sm text-gray-500">予約進行中 {done}/{total} </p>)}
-                <Progress value={done/total*100} />
-                <p className="text-sm text-gray-500">推定残り時間: {`${Math.floor((total-done)*15 / 3600)}時間${Math.floor(((total-done)*10 % 3600) / 60)}分`}
-                </p>
-              </div>
-              )
-            })()}
+            <p className="text-sm text-gray-500">4.投票の実行</p>
+            <Button variant="secondary" className="max-w-sm" onClick={() => {}}>投票</Button>
+            <p className="text-sm text-gray-500">最終更新日:{voteDestCreatedAt}</p>
             </div>
-            </div>
-            </div>
-            </div>
+          </div>
         </CardContent>
       </Card>
       </>

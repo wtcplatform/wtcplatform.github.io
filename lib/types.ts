@@ -16,8 +16,6 @@ export type VoteByOther = {
     }
 }
 
-
-
 export type voteDest = {
     date: string, 
     destination: string, 
@@ -26,4 +24,10 @@ export type voteDest = {
     id: string, 
     password: string, 
     done: boolean
+}
+
+
+export type createdAt = {
+    "seconds": number,
+    "nanoseconds": number
 }

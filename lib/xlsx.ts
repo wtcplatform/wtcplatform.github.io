@@ -137,10 +137,3 @@ export const writeVoteDataToExcel = async (voteData: VoteByOther) => {
   document.body.removeChild(link); // Clean up
   URL.revokeObjectURL(url); // Free up memory
 };
-
-
-
-// Usage:
-// readVoteDestination('/path/to/your/file.xlsx').then(data => {
-//   // Push to Firestore or use data as needed
-// });
