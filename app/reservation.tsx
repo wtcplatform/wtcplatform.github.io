@@ -11,8 +11,8 @@ import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/com
 import { processVoteDataFromExcel, writeVoteDataToExcel } from "@/lib/xlsx";
 import * as XLSX from 'xlsx';
 
-import { convertDataToVotedest, getUserList, getVoteByOther, calculateNumberOfVotes, pushDataToFirestore, getProgress} from "@/lib/utils";
-
+import { convertDataToVotedest, getUserList, getVoteByOther, getVoteDest, calculateNumberOfVotes, pushDataToFirestore, getProgress} from "@/lib/utils";
+import React, { useState, useEffect } from "react";
 import type { User } from "@/lib/types";
 
 
@@ -29,9 +29,22 @@ export default function ReservationComponent() {
 
     // This is a sample collected vote destinations
 
-    
+    const [voteDestCreatedAt, setVoteDestCreatedAt] = useState<string>("");
+    const [voteByOtherCreatedAt, setvoteByOtherCreatedAt] = useState<string>("");
 
-    const nextMonth = (new Date()).getMonth() + 1;
+
+    useEffect(()=> {
+      getVoteDest()
+        .then((response) => {
+        const {createdAt} = response;
+        setVoteDestCreatedAt(new Date(createdAt.seconds * 1000).toDateString())});
+      
+      getVoteByOther()
+        .then((response) => {
+        const {createdAt} = response;
+        setvoteByOtherCreatedAt(new Date(createdAt.seconds * 1000).toDateString())});
+    }, [])
+
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -53,13 +66,8 @@ export default function ReservationComponent() {
     };
 
     const downloadVoteByOther = async () => {
-      const voteByOther = await getVoteByOther();
+      const {voteByOther} = await getVoteByOther();
       return writeVoteDataToExcel(voteByOther);
-    }
-
-
-    const vote = async () => {
-      // 投票するapi
     }
 
     return (
@@ -71,15 +79,14 @@ export default function ReservationComponent() {
         <CardContent>
           <div className="flex flex-col gap-4 py-4">
             <div>
-            <p className="text-sm text-gray-500">1.下書きを更新</p>
+            <p className="text-sm text-gray-500">1.サイトから下書きを取得</p>
             <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>更新</Button>
-            {()}
-            <p className="text-sm text-gray-500">最終更新日:{}</p>
+            <p className="text-sm text-gray-500">最終取得日:{voteByOtherCreatedAt}</p>
             </div>
             <div>
             <p className="text-sm text-gray-500">2.投票数の下書きをダウンロード</p>
             <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>ダウンロード</Button>
-            <p className="text-sm text-gray-500">※デフォルトで他の人からの票数の3倍</p>
+            <p className="text-sm text-gray-500">※デフォルトで元の票数の3倍</p>
             </div>
             <div>
             <p className="text-sm text-gray-500">3.下書きを編集した投票先ファイルをアップロード</p>
@@ -90,15 +97,12 @@ export default function ReservationComponent() {
                 type="file"
                 onChange={handleUpload}
             />
-            <p className="text-sm text-gray-500">最終更新日:{}</p>
             <p className="text-sm text-gray-500">※合計で1000票は超えないようにお願いします！</p>
-
+            </div>
             <div>
             <p className="text-sm text-gray-500">4.投票の実行</p>
-            <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>投票</Button>
-            </div>
-
-
+            <Button variant="secondary" className="max-w-sm" onClick={() => {}}>投票</Button>
+            <p className="text-sm text-gray-500">最終更新日:{voteDestCreatedAt}</p>
             </div>
           </div>
         </CardContent>

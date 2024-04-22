@@ -25,3 +25,9 @@ export type voteDest = {
     password: string, 
     done: boolean
 }
+
+
+export type createdAt = {
+    "seconds": number,
+    "nanoseconds": number
+}

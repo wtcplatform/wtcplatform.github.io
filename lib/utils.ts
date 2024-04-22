@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { type voteDest, type VoteByOther, type UserWithRights, type User} from "./types";
+import { type voteDest, type VoteByOther, type UserWithRights, type User, type createdAt} from "./types";
 
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, setDoc, doc, query, limit, orderBy } from 'firebase/firestore/lite';
@@ -58,21 +58,8 @@ export const getUserList = async ({onlyAvailable=false}): Promise<User[]> => {
   return userList;
 }
 
-export const getProgress = async (): Promise<{"total": number, "done": number}> => {
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const userCollection = collection(db, 'voteDest');
-  const newestVoteByOther = query(userCollection, orderBy('createdAt', 'desc'), limit(1));
-  const voteSnapshot = await getDocs(newestVoteByOther);
-  if (!voteSnapshot.empty) {
-    const voteDest = voteSnapshot.docs[0].data().data; // Get the data of the newest document
-    return {"total": Object.keys(voteDest).length, "done": Object.values(voteDest).filter((vote: any) => vote.done).length};
-  } else {
-    throw new Error("No voteByOther documents found");
-  }
-}
 // get the data from Firestore
-export const getVoteByOther = async (): Promise<VoteByOther> => {
+export const getVoteByOther = async (): Promise<{"voteByOther": voteByOther, "createdAt": createdAt}>  => {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const userCollection = collection(db, 'voteByOther');
@@ -80,12 +67,28 @@ export const getVoteByOther = async (): Promise<VoteByOther> => {
   const voteSnapshot = await getDocs(newestVoteByOther);
 
   if (!voteSnapshot.empty) {
-    const newestDocument = voteSnapshot.docs[0].data().data; // Get the data of the newest document
-    console.log(newestDocument);
-    return newestDocument;
+    const data = voteSnapshot.docs[0].data(); // Get the data of the newest document
+    return {"voteByOther": data.data, "createdAt": data.createdAt}; 
   } else {
     throw new Error("No voteByOther documents found");
   }
+}
+export const getVoteDest = async (): Promise<{"voteDest": voteDest, "createdAt": createdAt}> => {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const userCollection = collection(db, 'voteDest');
+  const newestVoteByOther = query(userCollection, orderBy('createdAt', 'desc'), limit(1));
+  const voteSnapshot = await getDocs(newestVoteByOther);
+  if (!voteSnapshot.empty) {
+    const data = voteSnapshot.docs[0].data(); // Get the data of the newest document
+    return {"voteDest": data.data, "createdAt": data.createdAt}; 
+  } else {
+    throw new Error("No voteByOther documents found");
+  }
+}
+export const getProgress = async (): Promise<{"total": number, "done": number}> => {
+  const { voteDest } = await getVoteDest();
+  return {"total": Object.keys(voteDest).length, "done": Object.values(voteDest).filter((vote: any) => vote.done).length};
 }
 
 
