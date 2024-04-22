@@ -64,13 +64,13 @@ export default function ReservationComponent() {
         console.log(error);
       }
     };
-
     const downloadVoteByOther = async () => {
       const {voteByOther} = await getVoteByOther();
       return writeVoteDataToExcel(voteByOther);
     }
 
     return (
+      <>
       <Card className="w-full max-w-lg">
         <CardHeader className="pb-0">
           <CardTitle>予約</CardTitle>
@@ -80,7 +80,7 @@ export default function ReservationComponent() {
           <div className="flex flex-col gap-4 py-4">
             <div>
             <p className="text-sm text-gray-500">1.サイトから下書きを取得</p>
-            <Button variant="secondary" className="max-w-sm" onClick={downloadVoteByOther}>更新</Button>
+            <Button variant="secondary" className="max-w-sm" onClick={() => {}}>取得</Button>
             <p className="text-sm text-gray-500">最終取得日:{voteByOtherCreatedAt}</p>
             </div>
             <div>
@@ -107,5 +107,6 @@ export default function ReservationComponent() {
           </div>
         </CardContent>
       </Card>
+      </>
     )
 }
