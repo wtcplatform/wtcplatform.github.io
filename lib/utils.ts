@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { type voteDest, type VoteByOther, type UserWithRights, type User, type createdAt} from "./types";
+import { type VoteDest, type VoteByOther, type UserWithRights, type User, type CreatedAt} from "./types";
 
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, setDoc, doc, query, limit, orderBy } from 'firebase/firestore/lite';
@@ -59,7 +59,7 @@ export const getUserList = async ({onlyAvailable=false}): Promise<User[]> => {
 }
 
 // get the data from Firestore
-export const getVoteByOther = async (): Promise<{"voteByOther": voteByOther, "createdAt": createdAt}>  => {
+export const getVoteByOther = async (): Promise<{"voteByOther": VoteByOther, "createdAt": CreatedAt}>  => {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const userCollection = collection(db, 'voteByOther');
@@ -73,7 +73,7 @@ export const getVoteByOther = async (): Promise<{"voteByOther": voteByOther, "cr
     throw new Error("No voteByOther documents found");
   }
 }
-export const getVoteDest = async (): Promise<{"voteDest": voteDest, "createdAt": createdAt}> => {
+export const getVoteDest = async (): Promise<{"voteDest": VoteDest, "createdAt": CreatedAt}> => {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const userCollection = collection(db, 'voteDest');
@@ -106,7 +106,7 @@ export const pushDataToFirestore = async ({collectionName = "voteDest", data = {
 export function convertDataToVotedest(userList: User[], data: VoteByOther) {
   // Take an Object of #votes and a list of accounts, returns destinations ready for voting.
   // for test
-  const voteDestList: voteDest[] = [];
+  const voteDestList: VoteDest[] = [];
 
   const userListTimesfour = [...userList, ...userList, ...userList, ...userList];
   let idx = 0;
@@ -120,7 +120,7 @@ export function convertDataToVotedest(userList: User[], data: VoteByOther) {
         for (let i = 0; i < count; i++) {
 
           let user = userListTimesfour[idx];
-          let voteDest: voteDest = {date: date, destination: court, time: time, serial: user.serial.toString(), id: user.id.toString(), password: user.password.toString(), done: false};
+          let voteDest: VoteDest = {date: date, destination: court, time: time, serial: user.serial.toString(), id: user.id.toString(), password: user.password.toString(), done: false};
           voteDestList.push(voteDest);
           console.log(voteDestList.length);
           idx++;
