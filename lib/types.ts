@@ -16,7 +16,7 @@ export type VoteByOther = {
     }
 }
 
-export type voteDest = {
+export type VoteDest = {
     date: string, 
     destination: string, 
     time: string,
@@ -27,7 +27,7 @@ export type voteDest = {
 }
 
 
-export type createdAt = {
+export type CreatedAt = {
     "seconds": number,
     "nanoseconds": number
 }
