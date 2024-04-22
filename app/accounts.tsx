@@ -16,6 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export default function AccountsComponent() {
+  
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return null;
@@ -37,6 +38,7 @@ export default function AccountsComponent() {
 
   const handleClick = async () => {
     try {
+      console.log("handleClick");
       const userList = await getUserList({});
       const timestamp = (new Date()).toISOString().replace(/[:.]/g, '-');
       saveSortedDataToExcel(userList, `アカウント一覧_${timestamp}.xlsx`);
@@ -63,10 +65,10 @@ export default function AccountsComponent() {
             <div className="flex flex-col items-start space-y-4">
             <div>
             <p className="text-sm text-gray-500">1. 既存のユーザー一覧をダウンロード</p>
-            <Button variant="secondary" className="px-4 py-2" onClick={handleClick}>ダウンロード</Button>
+            <Button variant="secondary" className="px-4 py-2" onClick={handleClick}>ユーザー一覧をダウンロード</Button>
             </div>
             <div>
-            <p className="text-sm text-gray-500">2. ダウンロードしたxlsxファイルの行を削除/追加してアップロード</p>
+            <p className="text-sm text-gray-500">2.新規会員の行を追加してアップロード</p>
             <input
                 accept=".xlsx"
                 className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
@@ -74,7 +76,7 @@ export default function AccountsComponent() {
                 type="file"
                 onChange={handleUpload}
             />
-            <p className="text-sm text-gray-500">※この際、他の行と同じフォーマットで、行間を空けないようにしてください！</p>
+            {/* <p className="text-sm text-gray-500">投票可能数:{numberOfVotes}</p> */}
             </div>
             </div>
         </CardContent>
