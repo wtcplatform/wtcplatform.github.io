@@ -111,7 +111,8 @@ export const writeVoteDataToExcel = async (voteData: VoteByOther) => {
     courts.forEach((court) => {
       const courtData = items[court];
       const timeRow = times.map((time) => {
-        return (time in courtData) ? courtData[time] : "休";
+          let cell = (time in courtData) ? courtData[time] : "休";
+          return cell
       });
       
       worksheet.addRow([court, ...timeRow]);

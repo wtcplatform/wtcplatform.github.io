@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { firebaseConfig } from "@/lib/firebase";
 import { saveSortedDataToExcel } from "@/lib/xlsx";
 import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "@/components/ui/card"
-
+import { AiFillIdcard } from "react-icons/ai";
 
 import type { User } from "@/lib/types";
 
@@ -32,8 +32,8 @@ export default function AccountsComponent() {
       const userList: User[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
       const userJson = userList.reduce((a, v) => ({...a, [v.serial.toString().padStart(4, "0")]: v}), {})
 
-      await setDoc(doc(db, "account_list", (new Date()).toISOString()), {"createdAt": new Date(), userJson});
-      alert('Data upload completed!');
+      await setDoc(doc(db, "account_list", (new Date()).toISOString()), {"createdAt": new Date(), "data": userJson});
+      alert('アカウント一覧の更新に成功しました!');
     };
     reader.readAsBinaryString(file);
   };
@@ -51,16 +51,20 @@ export default function AccountsComponent() {
     return (
         <Card className="w-full max-w-lg">
         <CardHeader className="pb-0">
+        <div className="flex items-center space-x-4">
+            <AiFillIdcard className="w-8 h-8"/>
             <CardTitle>投票用アカウントの更新</CardTitle>
+          </div>
+            
         </CardHeader>
         <CardContent className="flex gap-4 items-start py-4">
             <div className="flex flex-col items-start space-y-4">
             <div>
-            <p className="text-sm text-gray-500">1. 既存のユーザー一覧をダウンロード</p>
-            <Button variant="secondary" className="px-4 py-2" onClick={handleClick}>ダウンロード</Button>
+            {/* <p className="text-base text-gray-500">1. 既存のユーザー一覧をダウンロード</p> */}
+            <Button variant="secondary" className="px-4 py-2 max-w-md text-left" onClick={handleClick}>1. 既存のユーザー一覧をダウンロード</Button>
             </div>
             <div>
-            <p className="text-sm text-gray-500">2. ダウンロードしたxlsxファイルの行を削除/追加してアップロード</p>
+            <p className="text-sm">2. ダウンロードしたxlsxファイルの行を削除/追加してアップロード</p>
             <input
                 accept=".xlsx"
                 className="w-full max-w-sm border border-gray-300 rounded-md py-2 px-4 text-sm"
@@ -68,7 +72,7 @@ export default function AccountsComponent() {
                 type="file"
                 onChange={handleUpload}
             />
-            <p className="text-sm text-gray-500">※この際、他の行と同じフォーマットで、行間を空けないようにしてください！</p>
+            <p className="text-xs text-gray-500">※この際、他の行と同じフォーマットで、行間を空けないようにしてください！</p>
             </div>
             </div>
         </CardContent>

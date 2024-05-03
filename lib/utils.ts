@@ -15,29 +15,29 @@ export function cn(...inputs: ClassValue[]) {
 // 1. #rights 2.expire_at 3.penalty(optional)
 // probably this is fine  
 
-const decreaseFirstEligibleUserRightsAndReturnUser = (userList: UserWithRights[]) => {
-  // 最大のrightsを持つユーザーを探す
-  let maxRightsUser = userList.reduce((acc, user) => user.rights > (acc.rights || 0) ? user : acc, {rights: 0});
+// const decreaseFirstEligibleUserRightsAndReturnUser = (userList: UserWithRights[]) => {
+//   // 最大のrightsを持つユーザーを探す
+//   let maxRightsUser = userList.reduce((acc, user) => user.rights > (acc.rights || 0) ? user : acc, {rights: 0});
 
-  if (maxRightsUser.rights === 0) {
-    throw new Error("#votes exceeds the number of available users.")
-  }
+//   if (maxRightsUser.rights === 0) {
+//     throw new Error("#votes exceeds the number of available users.")
+//   }
 
-  // 更新されたユーザーリストを生成し、最大のrightsを持つユーザーのrightsを減らす
-  const updatedUsers = userList.map(user => {
-    if (user === maxRightsUser) { // 条件を満たすユーザーが見つかった場合
-      const updatedUser = {...user, rights: user.rights - 1}; // rightsを1減らす
-      maxRightsUser = updatedUser; // 更新後のユーザーを最大のrightsを持つユーザーとして格納
-      return updatedUser;
-    }
-    return user; // 条件を満たさない場合は元のユーザーオブジェクトをそのまま返す
-  });
+//   // 更新されたユーザーリストを生成し、最大のrightsを持つユーザーのrightsを減らす
+//   const updatedUsers = userList.map(user => {
+//     if (user === maxRightsUser) { // 条件を満たすユーザーが見つかった場合
+//       const updatedUser = {...user, rights: user.rights - 1}; // rightsを1減らす
+//       maxRightsUser = updatedUser; // 更新後のユーザーを最大のrightsを持つユーザーとして格納
+//       return updatedUser;
+//     }
+//     return user; // 条件を満たさない場合は元のユーザーオブジェクトをそのまま返す
+//   });
 
-  return {
-    updatedUsers,
-    foundUser: maxRightsUser.rights >= 0 ? maxRightsUser : null // 条件を満たすユーザー、見つからなかった場合はnull
-  };
-}
+//   return {
+//     updatedUsers,
+//     foundUser: maxRightsUser.rights >= 0 ? maxRightsUser : null // 条件を満たすユーザー、見つからなかった場合はnull
+//   };
+// }
 
 
 export const getUserList = async ({onlyAvailable=false}): Promise<User[]> => {
@@ -77,6 +77,7 @@ export const getVoteByOther = async (): Promise<{"voteByOther": VoteByOther, "cr
     throw new Error("No voteByOther documents found");
   }
 }
+
 export const getVoteDest = async (): Promise<{"voteDest": VoteDest, "createdAt": CreatedAt}> => {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -90,6 +91,7 @@ export const getVoteDest = async (): Promise<{"voteDest": VoteDest, "createdAt":
     throw new Error("No voteByOther documents found");
   }
 }
+
 export const getProgress = async (): Promise<{"total": number, "done": number}> => {
   const { voteDest } = await getVoteDest();
   return {"total": Object.keys(voteDest).length, "done": Object.values(voteDest).filter((vote: any) => vote.done).length};
@@ -124,7 +126,17 @@ export function convertDataToVotedest(userList: User[], data: VoteByOther) {
         for (let i = 0; i < count; i++) {
 
           let user = userListTimesfour[idx];
-          let voteDest: VoteDest = {date: date, destination: court, time: time, serial: user.serial.toString(), id: user.id.toString(), password: user.password.toString(), done: false};
+          let voteDest: VoteDest = {
+            date: date,
+            destination: court,
+            time: time,
+            serial: user.serial.toString(),
+            id: user.id.toString(), 
+            password: user.password.toString(), 
+            done: false, 
+            skipped: false
+          };
+
           voteDestList.push(voteDest);
           console.log(voteDestList.length);
           idx++;
@@ -146,4 +158,32 @@ export const calculateNumberOfVotes = (data: VoteByOther) => {
     }
   }
   return count;
+}
+
+export function transformVotes(votes: VoteByOther): VoteByOther {
+  // 結果を保持するための新しいオブジェクト
+  const transformed: VoteByOther = {};
+
+  // 各日付に対して処理を行う
+  for (const date of Object.keys(votes).sort()) {
+      if (!transformed[date]) {
+        transformed[date] = {};
+      };
+      // 各コート番号に対して処理を行う
+      for (const courtNumber of Object.keys(votes[date])) {
+        if (!transformed[date][courtNumber]) {
+          transformed[date][courtNumber] = {};
+        };
+          // 各時間に対して処理を行う
+          for (const time of Object.keys(votes[date][courtNumber])) {
+              const count = votes[date][courtNumber][time];
+              // console.log(count);
+              // 条件に応じた変換を行い、結果を保存
+              transformed[date][courtNumber][time] = count === 0 ? 1 : count * 3;
+              // console.log(typeof(count));
+          }
+      }
+  }
+
+  return transformed;
 }
