@@ -27,3 +27,4 @@ export const handler = async (event) => {
   return response;
 }
 ```
+Don't omit any attributes.
