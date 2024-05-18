@@ -28,3 +28,5 @@ export const handler = async (event) => {
 }
 ```
 Don't omit any attributes.(Otherwise it doesn't work)
+List of allowed confirmStates are:
+["処理中", "完了", "失敗", "未実施"]
