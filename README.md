@@ -5,7 +5,7 @@
 
 # format of response(on AWS lambda function)
 Follow the example below:
-```
+```javascript
 export const handler = async (event) => {
   const courtTaken = {"foo": "bar"};
   let response =  JSON.stringify({
