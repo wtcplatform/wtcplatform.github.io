@@ -11,7 +11,7 @@ export const handler = async (event) => {
   let response =  JSON.stringify({
     stateUpdates: [
       { confirmState: "処理中" },
-      { confirmStarted: new Date().toISOString() }
+      { lastUpdated: new Date().toISOString() }
     ],
     databaseUpdates: [
       {
@@ -29,4 +29,9 @@ export const handler = async (event) => {
 ```
 Don't omit any attributes.(Otherwise it doesn't work)
 List of allowed confirmStates are:
-["処理中", "完了", "失敗", "未実施"]
+["処理中", "完了", "失敗", "未実施"]]
+
+
+Status should be updated periodically at the beginning of every month:
+1. create a new document "YYYY-MM"
+2. set {event}LastUpdated to current date, {event}State to "未実施"
