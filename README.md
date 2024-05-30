@@ -31,7 +31,7 @@ Don't omit any attributes.(Otherwise it doesn't work)
 List of allowed confirmStates are:
 ["処理中", "完了", "失敗", "未実施"]]
 
-Any function should follow this format for the ease of use.
+A response of functions should follow this format for ease.
 
 Status should be updated periodically at the beginning of every month:
 1. create a new document "YYYY-MM"
