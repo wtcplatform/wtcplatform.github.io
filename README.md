@@ -8,23 +8,23 @@ Follow the example below:
 ```javascript
 export const handler = async (event) => {
   const courtTaken = {"foo": "bar"};
-  let response =  JSON.stringify({
+  let response = JSON.stringify({
     stateUpdates: [
       { confirmState: "処理中" },
       { lastUpdated: new Date().toISOString() }
     ],
     databaseUpdates: {
-        collectionName: 'courtTaken',
-        docId: new Date().toISOString(),
-        data: courtTaken
-      },
+      collectionName: 'courtTaken',
+      docId: new Date().toISOString(),
+      data: courtTaken
+    },
     databaseQuery: {
-        collectionName: 'courtTaken',
-    }
+      collectionName: 'courtTaken'
+    },
     data: {
       data: courtTaken
     },
-    loopControl: "finished"|"processsing"
+    loopContinue: event.loopContinue || false // Default to false if not provided
   });
   return response;
 }
