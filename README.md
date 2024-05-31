@@ -24,7 +24,7 @@ export const handler = async (event) => {
     data: {
       courtTaken: courtTaken
     },
-    loopContinue: event.loopContinue || false // Default to false if not provided
+    loopContinue: true || false // Default to false if not provided
   });
   return response;
 }
