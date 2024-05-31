@@ -24,9 +24,7 @@ export const handler = async (event) => {
     data: {
       data: courtTaken
     },
-    loopControl: {
-      status: "finished"|"processsing"
-    }
+    loopControl: "finished"|"processsing"
   });
   return response;
 }
