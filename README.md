@@ -13,7 +13,7 @@ export const handler = async (event) => {
       { confirmState: "処理中" },
       { lastUpdated: new Date().toISOString() }
     ],
-    databaseUpdates: {
+    databaseUpdate: {
       collectionName: 'courtTaken',
       docId: new Date().toISOString(),
       data: courtTaken
