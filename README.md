@@ -22,7 +22,7 @@ export const handler = async (event) => {
       collectionName: 'courtTaken'
     },
     data: {
-      data: courtTaken
+      courtTaken: courtTaken
     },
     loopContinue: event.loopContinue || false // Default to false if not provided
   });
