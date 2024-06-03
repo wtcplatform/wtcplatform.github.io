@@ -18,9 +18,9 @@ export const handler = async (event) => {
       docId: new Date().toISOString(),
       data: courtTaken
     },
-    databaseQuery: {
-      collectionName: 'courtTaken'
-    },
+    databaseQueries: [
+      {collectionName: 'courtTaken'},
+    ],
     data: {
       courtTaken: courtTaken
     },
