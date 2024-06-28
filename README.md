@@ -39,6 +39,20 @@ Statusへのサイトの情報管理の一本化
       VoteDestが作成された時点でStatusのVoteDestLastUpdatedを更新するようにする。voteDestの作成はaws step functionsで行われ、
 - [ ] VoteByOtherCreatedAtの除去
 
+Statusの構成: {
+  "account_listLastUpdated": "2024-06-05T12:25:28.486Z",
+  "confirmLastUpdated": "2024-06-05T08:30:51.019Z",
+  "confirmState": "完了",
+  "createdAt": "2024-06-01T00:00:00.000Z",  // UTC+9からUTCに変換
+  "lastUpdated": "2024-06-02T14:23:52.546Z",
+  "nAvailableAccounts": 263,
+  "voteDestLastUpdated": "2024-06-28T09:11:54.318Z",
+  "voteState": "未実施",
+  "voteLastUpdated": "2024-06-28T09:11:54.318Z",
+}
+
+...LastUpdatec系は、"読み込み中"というプレイスホルダーを使うためstring、特にISOStringで保存する。
+
 AWS step functionsについて
 - [x] checkAccountsを完成させる
 - [ ] 
