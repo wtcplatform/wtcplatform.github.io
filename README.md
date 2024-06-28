@@ -1,8 +1,18 @@
-普通に日本語で書いた方がよさそう。
-今取り組んでいるwtc-platformの複雑性が増しており、どこをいじるべきなのか、プロダクトの目的が何なのかということがさっぱりわからなくなっている。
+## 今進行中のtodoリストについて
+VoteDestCreatedAtの除去
+- VoteDestが作成された時点でStatusのVoteDestLastUpdatedを更新するようにする。
+- VoteDestの作成はaws step functionsのvote上で行われる。
 
-これは将来的な保守性の低下につながる。時間をとって機能のダイアグラムを作る。
+voteを完成させる
 
+基本的には入力なしで投票まで一貫してやる。一連の流れでおそらく
+- [x] checkAccountsの実行
+- [ ] アカウント一覧とユーザーがアップロードしたvoteDestRawを、fireStoreから取得。{..., "data": {"account_list": ..., "voteDestRaw": ...}} の形の入力。
+- [ ] voteDestの作成
+- [ ] voteDestをもとに投票
+
+- [ ] (フロントエンド)　アカウント一覧の取得、各アクション
+# Todo
 # フロントエンド
 ## Page
 AccountsComponent
@@ -12,8 +22,8 @@ ReservationComponent
 - [ ] 各種最終更新日を、Statusから引っ張ってきて掲載する。
 
 # バックエンド
-
 AWS lambda functions 
+- [ ] voteを完成させる。
 
 リファクタリング
 Statusへのサイトの情報管理の一本化
@@ -25,11 +35,13 @@ AWS step functionsについて
 - [x] checkAccountsを完成させる
 - [ ] 
 
-## 今進行中のtodoリストについて
-VoteDestCreatedAtの除去
-VoteDestが作成された時点でStatusのVoteDestLastUpdatedを更新するようにする。voteDestの作成はaws step functionsで行われ、
 
-# Todo
+普通に日本語で書いた方がよさそう。
+今取り組んでいるwtc-platformの複雑性が増しており、どこをいじるべきなのか、プロダクトの目的が何なのかということがさっぱりわからなくなっている。
+
+これは将来的な保守性の低下につながる。時間をとって機能のダイアグラムを作る。
+
+# Todo(legacy)
 1. Vote on aws lambda, connecting to aws step functions.
 2. Trigger from local environment
 3. Confirm on aws lambda(it doesn't require pushing data to Firestore), connecting to aws step functions.
